@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+/* Application body only: the branded header and navigation remain outside this scope. */
+.app-body {
+  background: #efede7;
+  color: #334155;
+}
+
+.app-body :is(
+  [class*="bg-slate-950"],
+  [class*="bg-slate-900"]
+) {
+  background-color: #f7f4ed;
+  border-color: #e2ded5;
+  box-shadow: 0 8px 22px rgba(51, 65, 85, 0.045);
+}
+
+.app-body :is(
+  [class*="bg-slate-800"],
+  [class*="bg-slate-850"],
+  [class*="bg-slate-700"]
+) {
+  background-color: #e9e7e1;
+  border-color: #ddd9d0;
+}
+
+.app-body :is(
+  [class*="from-slate-"],
+  [class*="via-slate-"],
+  [class*="to-slate-"]
+) {
+  background: #f7f4ed;
+}
+
+.app-body :is([class*="border-slate-"], [class*="divide-slate-"]) {
+  border-color: #ddd9d0;
+}
+
+.app-body :is([class*="text-white"], [class*="text-slate-100"], [class*="text-slate-200"], [class*="text-slate-300"]) {
+  color: #334155;
+}
+
+.app-body :is([class*="text-slate-400"], [class*="text-slate-500"]) {
+  color: #64748b;
+}
+
+.app-body :is([class*="bg-emerald-950"], [class*="bg-emerald-900"]) {
+  background-color: #eef5ee;
+  border-color: #c4dfc7;
+}
+
+.app-body :is([class*="bg-amber-950"], [class*="bg-amber-900"], [class*="bg-orange-950"]) {
+  background-color: #fcf4e6;
+  border-color: #eed7ae;
+}
+
+.app-body :is([class*="bg-red-950"], [class*="bg-red-900"]) {
+  background-color: #fceeee;
+  border-color: #ebc4c4;
+}
+
+.app-body :is([class*="bg-cyan-950"], [class*="bg-cyan-900"]) {
+  background-color: #eef6f5;
+  border-color: #c5e0db;
+}
+
+.app-body :is([class*="text-emerald-100"], [class*="text-emerald-200"], [class*="text-emerald-300"]) {
+  color: #166534;
+}
+
+.app-body :is([class*="text-amber-100"], [class*="text-amber-200"], [class*="text-amber-300"]) {
+  color: #9a5b08;
+}
+
+.app-body :is([class*="text-red-100"], [class*="text-red-200"], [class*="text-red-300"]) {
+  color: #b42318;
+}
+
+.app-body :is([class*="text-cyan-100"], [class*="text-cyan-200"], [class*="text-cyan-300"]) {
+  color: #0f766e;
+}
+
+.app-body :is(input, select, textarea) {
+  background-color: #f7f4ed;
+  color: #334155;
+  border-color: #d8d4ca;
+}
+
+.app-body :is(input, select, textarea):focus {
+  border-color: #c97c26;
+  outline-color: #c97c26;
+}
+
+.app-body :is([class*="bg-red-5"], [class*="bg-red-6"], [class*="bg-emerald-5"], [class*="bg-emerald-6"], [class*="bg-amber-5"], [class*="bg-amber-6"], [class*="bg-cyan-5"], [class*="bg-cyan-6"]) [class*="text-white"],
+.app-body :is([class*="bg-red-5"], [class*="bg-red-6"], [class*="bg-emerald-5"], [class*="bg-emerald-6"], [class*="bg-amber-5"], [class*="bg-amber-6"], [class*="bg-cyan-5"], [class*="bg-cyan-6"]) {
+  color: #ffffff;
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Disaster Sentinel AI",
+  "description": "Multi-hazard early warning, flood and landslide risk calculation, citizen reporting, and emergency response prioritization system.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
