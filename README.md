@@ -6,9 +6,11 @@ TRATA brings together citizen incident reporting, multi-hazard risk assessment, 
 
 ## Deployed application
 
-TRATA is deployment-ready as a single Express application that serves the Vite client in production. Its hosted URL is supplied at deployment time through the `APP_URL` environment variable.
+TRATA is deployed as a single Express application that serves the Vite client in production.
 
-> **Live link:** Add the production `APP_URL` here after deployment. The tracked environment template intentionally contains `MY_APP_URL`, not a public deployment address.
+## Live demo
+
+[Open the TRATA live demo](https://trata-1.onrender.com/)
 
 ## What TRATA does
 
@@ -141,6 +143,20 @@ Set `GEMINI_API_KEY` to enable server-side Gemini requests. The server exposes t
 | `POST /api/ai/lifecycle-strategy` | Produces lifecycle strategy context. |
 
 Without a Gemini key, the application uses implemented deterministic fallback responses where available. AI output is advisory; it does not replace the deterministic risk, priority, routing, or personnel-allocation logic.
+
+## Team
+
+TRATA was built for the **SIH Internal Hackathon** at **Techno India University** by **Team ACTIVFLY**. It is a prototype focused on combining disaster-risk awareness, incident prioritization, routing, and coordinated response workflows.
+
+## My contributions
+
+- **Graph construction and model** — Built the deterministic Sundarbans prototype network of nodes and weighted edges.
+- **Geographic mapping** — Mapped an incident’s latitude and longitude to the nearest graph node using Haversine distance.
+- **A* routing** — Implemented `g(n)`, the Haversine heuristic `h(n)`, `f(n) = g(n) + h(n)`, path reconstruction, and unavailable-edge handling.
+- **Government-center selection** — Evaluated reachable centers and selected the one with the shortest feasible route.
+- **Graph availability and blocking** — Handled unavailable and recovered edges based on incident-area coordinates.
+- **Priority-response integration** — Connected the routing layer to the existing priority score and dispatch workflow rather than treating it as a standalone demonstration.
+- **Priority-response testing** — Added tests covering priority-response functionality, including routing and dispatch behavior.
 
 ## Project structure
 
