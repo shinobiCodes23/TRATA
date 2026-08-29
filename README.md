@@ -1,175 +1,199 @@
-# Disaster Sentinel AI
+# TRATA
 
-Disaster Sentinel AI is a disaster-management and emergency-response prototype. It brings together citizen incident reporting, risk assessment, map-based situational awareness, rescue-unit coordination, public-alert workflows, and a graph-based priority-response module.
+> A disaster-management and emergency-response prototype for the Sundarbans, West Bengal.
 
-The application is intended for demonstration, academic, and prototype use. Its Sundarbans routing network is deterministic sample data, not a live emergency dispatch or road-navigation service.
+TRATA brings together citizen incident reporting, multi-hazard risk assessment, map-based situational awareness, rescue-fleet coordination, public-alert workflows, and graph-based priority response in one application. It is designed for demonstration, academic, and prototype use only. The routing network and operational data are deterministic sample data—not live emergency-dispatch, road-navigation, or public-safety systems.
 
-## Overview
+## Deployed application
 
-The host application provides:
+TRATA is deployment-ready as a single Express application that serves the Vite client in production. Its hosted URL is supplied at deployment time through the `APP_URL` environment variable.
 
-- citizen reporting, including SOS-style reports and location-based risk assessment;
-- deterministic incident-priority calculation and optional Gemini-assisted triage;
-- an authority dashboard for report review, rescue-unit assignment, and alert publishing;
-- Leaflet-based visualization of reports, sensors, shelters, hazard zones, and rescue units;
-- simulation, historical analysis, IoT, shelter, and multi-source operational-intelligence views; and
-- Step 4 Priority Response, which batches incoming incidents, orders them by priority, allocates personnel, and routes responses through a deterministic graph.
+> **Live link:** Add the production `APP_URL` here after deployment. The tracked environment template intentionally contains `MY_APP_URL`, not a public deployment address.
 
-## System Architecture
+## What TRATA does
 
-Step 4 is integrated into the existing application; it is not a separate service or application. The priority score calculated upstream remains the source of truth throughout dispatch processing.
+- Lets citizens submit location-aware incident and SOS-style reports.
+- Calculates deterministic flood, landslide, and composite location-risk assessments.
+- Provides map views for incident reports, hazard zones, sensors, shelters, and rescue units.
+- Gives authorities an operational command view for reviewing incidents, assigning fleets, and issuing public alerts.
+- Simulates changing disaster conditions, seasonal context, IoT telemetry, shelter capacity, and historical analysis.
+- Prioritizes incoming incidents, allocates personnel, and finds routes through a deterministic Sundarbans graph.
+- Uses optional Gemini endpoints for advisory intelligence, triage, briefings, broadcasts, hazard prediction, fusion intelligence, and lifecycle strategy. Deterministic application logic remains authoritative for operational scores, routing, and allocation.
 
-```text
-Citizen Incident
-        ↓
-Existing Priority Calculation
-        ↓
-Intake Buffer
-        ↓
-Persistent Priority Queue
-        ↓
-Step 4 Response Engine
-        ↓
-Resource Allocation + Graph Routing
-        ↓
-ResponseResult
-        ↓
-Authority / Dispatch Workflow
+## Architecture
+
+```mermaid
+flowchart LR
+  Citizen[Citizen Portal\nIncident & SOS reports]
+  Data[Prototype data\nRegions, sensors, shelters, hazards]
+  Sim[Simulation & seasonal state]
+  Risk[Deterministic risk engine\nFlood, landslide, priority]
+  Map[Situational-awareness map]
+  Command[Authority Command\nReview, alerts, fleet control]
+  Intake[Intake buffer\n5-second batching window]
+  Queue[Persistent priority queue\nScore + arrival tie-break]
+  Engine[Priority Response engine]
+  Graph[A* router\nSundarbans graph]
+  Fleet[Government-center fleets]
+  AI[Optional Gemini advisory APIs]
+
+  Citizen --> Risk
+  Data --> Risk
+  Sim --> Risk
+  Data --> Map
+  Sim --> Map
+  Risk --> Map
+  Risk --> Intake
+  Intake --> Queue --> Engine
+  Engine --> Graph --> Fleet
+  Engine --> Command
+  Fleet --> Command
+  Map --> Command
+  Citizen --> Command
+  Citizen -. advisory requests .-> AI
+  Command -. advisory requests .-> AI
+  Sim -. advisory context .-> AI
 ```
 
-## Step 4 — Priority Response
-
-### Intake Buffer
-
-Incoming incidents first enter a temporary in-memory intake buffer, implemented as an array. A configurable `PRIORITY_BUFFER_WINDOW_MS` window (currently 5 seconds) batches incidents that arrive close together before dispatch ordering begins. The buffer performs no routing and does not sort incidents.
-
-### Priority Queue
-
-After the buffer window expires, buffered incidents are inserted into the persistent `PriorityQueue`. The queue orders entries by descending upstream `priorityScore`; entries with the same score use deterministic arrival-sequence tie-breaking. The highest-priority pending incident is selected first.
-
-### Non-Preemptive Dispatch
-
-An active dispatch is not interrupted by a later incident. Incidents received while dispatch is active are placed into the intake buffer. Once the current response completes, that buffer is flushed into the same persistent priority queue, and the next highest-priority pending incident is selected. If no work remains, the system returns to the idle state and waits for the next buffer cycle.
+### Request and runtime model
 
 ```text
-Incoming incidents
-        ↓
-Intake Buffer
-        ↓
-Buffer Window
-        ↓
-Priority Queue
-        ↓
-Highest-Priority Incident
-        ↓
-Step 4 Processing
-        ↓
-Dispatch
-        ↓
-New incidents during dispatch → Intake Buffer
-        ↓
-Current dispatch completes
-        ↓
-Flush Buffer → Priority Queue
-        ↓
-Next Dispatch
+Browser (React + Vite)
+  ├─ UI modules: map, citizen portal, authority command, risk engine,
+  │  digital twin, IoT telemetry, shelters, historical analysis, fusion intelligence
+  ├─ deterministic client-side risk and priority-response logic
+  └─ /api/* requests
+          │
+          ▼
+Express server (server.ts)
+  ├─ /api/health
+  ├─ optional Gemini-backed advisory endpoints
+  ├─ development: Vite middleware
+  └─ production: serves the built client from dist/
 ```
 
-## Graph-Based Routing
+## Core workflow
 
-Step 4 uses a deterministic, manually constructed Sundarbans prototype network with:
+1. **Observe risk** — Simulation inputs, sensor telemetry, prototype region data, and deterministic calculators generate risk context.
+2. **Report an incident** — A citizen report includes the hazard, description, location, affected people, and incident-priority information.
+3. **Assess and visualize** — TRATA presents reports alongside hazards, shelters, rescue units, and map context.
+4. **Batch and prioritize** — Reports enter an in-memory intake buffer before being inserted into the persistent priority queue.
+5. **Plan a response** — The response engine determines personnel needs, maps the report to the nearest graph node, and evaluates routes to government centers.
+6. **Assign a fleet** — The authority workflow assigns an eligible center-associated fleet when a route is feasible and personnel are available.
+7. **Track and recover** — Fleet and incident status progress through dispatch, service, return, maintenance, and availability recovery.
 
-- 50 location/road nodes (`s-01` through `s-50`);
-- 5 government-center nodes (`g-01` through `g-05`); and
-- 55 graph nodes in total.
+## Priority-response system
 
-Each node has a static latitude and longitude. Connectivity is manually defined as a weighted, undirected graph with symmetric edges. Edge weights are calculated using Haversine geographic distance, and each edge has an availability state. The dataset is a realistic-looking prototype network, not a live real-world road network.
+The priority-response module is integrated into the host application rather than deployed as a separate service. The upstream incident `priorityScore` is the source of truth throughout dispatch processing.
 
-## Coordinate Mapping
+### Intake buffer and queue
 
-An incident’s latitude and longitude are mapped to the nearest graph node using Haversine geographic distance. The selected graph node becomes the routing origin for Step 4.
+New incidents first enter an in-memory intake buffer. The configurable `PRIORITY_BUFFER_WINDOW_MS` is currently five seconds, allowing closely arriving reports to be batched before ordering. The buffer neither routes nor sorts incidents.
 
-## A* Routing
+When the window ends, reports move to the persistent `PriorityQueue`, which orders entries by descending upstream priority score. Equal scores use deterministic arrival-sequence tie-breaking. The highest-priority pending incident is selected first.
 
-The router uses A* search:
+Dispatch is non-preemptive: a report that arrives during an active response waits in the intake buffer. When the active response completes, buffered reports are moved to the same priority queue and the next highest-priority incident is selected.
 
-- `g(n)` is the accumulated route distance;
-- Haversine distance to the target is the heuristic `h(n)`;
-- `f(n) = g(n) + h(n)`;
-- unavailable edges are ignored;
-- successful paths are reconstructed and return their total route distance.
+### Personnel allocation
 
-Every available government center is evaluated. Unreachable centers are discarded, and the reachable center with the shortest route distance is selected. If none can be reached, the response result has status `NO_FEASIBLE_ROUTE`.
-
-## Resource Allocation
-
-Personnel allocation is based on the existing priority-score thresholds:
-
-| Priority score | Personnel |
+| Priority score | Personnel assigned |
 | --- | ---: |
 | 80–100 | 10 |
 | 65–79 | 8 |
 | 45–64 | 6 |
 | Below 45 | 4 |
 
-## Graph Blocking and Recovery
+### Routing
 
-Graph edge availability can be changed using incident-area coordinates. Blocking marks the edges associated with the nearest graph node as unavailable; recovery marks them available again. This changes availability only—the underlying Haversine-derived distance is retained.
+The deterministic Sundarbans prototype network contains 55 nodes: 50 location/road nodes (`s-01` through `s-50`) and five government-center nodes (`g-01` through `g-05`). Nodes use static coordinates and manually defined weighted, undirected connections. Weights use Haversine geographic distance.
 
-## Government Centers
+For each incident, TRATA maps the report coordinates to the nearest graph node. A* routing uses accumulated distance as `g(n)` and Haversine distance to the destination as `h(n)`. Unavailable edges are ignored. Every available government center is evaluated; the reachable center with the shortest route is selected. If none is reachable, the result is `NO_FEASIBLE_ROUTE`.
 
-The system contains five government-center graph nodes. When building a response, Step 4 evaluates each available center and selects the reachable center with the minimum route distance. The repository intentionally provides IDs rather than real-world center names.
+Graph availability can be changed around incident-area coordinates. Blocking affects edges associated with the nearest graph node; recovery restores those edges without changing their underlying distance.
 
-## Project Structure
+## Major application areas
+
+| Area | Purpose |
+| --- | --- |
+| Disaster Map | Visualizes reports, hazard zones, sensors, shelters, and rescue units. |
+| Citizen Portal | Captures incident reports and provides citizen-facing safety and location tools. |
+| Authority Command | Supports incident review, response results, fleet coordination, operational messages, and public-alert controls. |
+| Risk Engines | Produces deterministic flood, landslide, composite-risk, and location-risk outputs. |
+| Digital Twin & Story | Simulates disaster stages and explains the operational workflow. |
+| IoT Telemetry | Displays prototype sensor telemetry and supports simulated sensor deployment. |
+| Shelters | Presents shelter availability and capacity context. |
+| Historical Benchmarks | Provides historical-analysis views. |
+| Fusion Intelligence | Brings together multi-source operational intelligence and optional AI advisory context. |
+
+## Optional Gemini advisory features
+
+Set `GEMINI_API_KEY` to enable server-side Gemini requests. The server exposes these advisory endpoints:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/health` | Returns service status and whether a Gemini key is available. |
+| `POST /api/ai/risk-intelligence` | Interprets deterministic risk-engine outputs. |
+| `POST /api/ai/situation-briefing` | Produces an incident-command briefing. |
+| `POST /api/ai/triage-report` | Provides incident triage advice. |
+| `POST /api/ai/broadcast-generator` | Generates multi-channel public-alert content. |
+| `POST /api/ai/predict-hazards` | Produces advisory hazard-escalation context. |
+| `POST /api/ai/fusion-intelligence` | Produces fusion-intelligence context. |
+| `POST /api/ai/lifecycle-strategy` | Produces lifecycle strategy context. |
+
+Without a Gemini key, the application uses implemented deterministic fallback responses where available. AI output is advisory; it does not replace the deterministic risk, priority, routing, or personnel-allocation logic.
+
+## Project structure
 
 ```text
 src/
-├── App.tsx                         # Host-application integration and state
-├── components/                     # Citizen, authority, map, simulation, and analysis views
+├── App.tsx                         # Application integration and operational state
+├── components/                     # User-interface modules
 ├── data/
-│   └── disasterData.ts              # Prototype regions and simulation data
+│   └── disasterData.ts              # Prototype region and simulation data
 ├── priorityResponse/
-│   ├── types.ts                     # Step 4 domain types and response contracts
-│   ├── graph.ts                     # Haversine, graph state, availability, and coordinate mapping
-│   ├── graphData.ts                 # Static Sundarbans nodes and manually defined edges
-│   ├── priorityQueue.ts             # Persistent priority ordering and tie-breaking
+│   ├── types.ts                     # Priority-response domain contracts
+│   ├── graph.ts                     # Graph state, Haversine, availability, coordinate mapping
+│   ├── graphData.ts                 # Static nodes and manually defined edges
+│   ├── priorityQueue.ts             # Persistent ordering and tie-breaking
 │   ├── astar.ts                     # A* pathfinding and center selection
-│   ├── responseEngine.ts            # Buffer lifecycle, dispatch orchestration, and response generation
+│   ├── responseEngine.ts            # Buffer lifecycle and dispatch orchestration
 │   └── tests/
-│       └── priorityResponse.test.ts # Step 4 tests
+│       └── priorityResponse.test.ts # Priority-response tests
+├── types.ts                         # Shared application types
 ├── utils/
-│   └── riskCalculators.ts           # Flood, landslide, and response-priority calculations
+│   ├── riskCalculators.ts           # Flood, landslide, and response-priority calculations
+│   └── sundarbansRiskNormalization.ts
 └── main.tsx                         # React entry point
 server.ts                            # Express API and optional Gemini integrations
+public/                              # TRATA visual assets
 ```
 
-## Run Locally
+## Run locally
 
 **Prerequisite:** Node.js
 
-1. Install dependencies:
+1. Install dependencies.
 
    ```bash
    npm install
    ```
 
-2. Optionally create a `.env` file and set a Gemini API key for the server’s AI-assisted endpoints:
+2. Create `.env` from the provided example and, if needed, add your Gemini API key.
 
    ```env
-   GEMINI_API_KEY=your_api_key
+   GEMINI_API_KEY=your_gemini_api_key
+   APP_URL=http://localhost:3000
    ```
 
-   Without a key, the server uses its implemented deterministic fallback responses for those endpoints.
-
-3. Start the development server:
+3. Start the development server.
 
    ```bash
    npm run dev
    ```
 
-4. Open the application at `http://localhost:3000`.
+4. Open [http://localhost:3000](http://localhost:3000).
 
-## Validation Commands
+## Validation
 
 ```bash
 npm test
@@ -177,4 +201,10 @@ npm run lint
 npm run build
 ```
 
-`npm test` runs the Step 4 test suite, `npm run lint` performs TypeScript checking, and `npm run build` creates the production client and server bundles.
+- `npm test` runs the priority-response test suite.
+- `npm run lint` performs TypeScript checking.
+- `npm run build` builds the production client and server bundles.
+
+## Scope and safety note
+
+TRATA is a prototype. It must not be used as a live emergency-dispatch, navigation, safety-critical risk-scoring, or public-alerting system without appropriate real-world data sources, validation, operational safeguards, and authorized emergency-management oversight.
